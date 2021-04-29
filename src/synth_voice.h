@@ -1,5 +1,12 @@
 #include <Audio.h>
 
+typedef enum _eModulation {
+  modulation_none,
+  modulation_lfo,
+  modulation_envelope,
+  modulation_extern,
+} eModulation;
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 class VoiceInput 
 {
@@ -15,7 +22,10 @@ public:
 protected:
   eType            type;
   AudioStream     *source;
-  AudioConnection *patch;
+  AudioConnection *patchOut;
+  AudioConnection *patchMod;
+  float            frequency;
+  float            velocity;
 
 public:
   VoiceInput();
@@ -27,22 +37,60 @@ public:
   void disconnect();
 
   eType getType();
+
+  void setFrequency(float freq);
+  void setVelocity(float velocity);
+
+  void noteOn();
+  void noteOff();
+
+  void setShapeModulation(AudioStream *input= nullptr);
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-class SynthVoice : public AudioStream
+class SynthVoice
 {
+public:
+  typedef enum _eFilterType {
+    filter_low_pass  = 0,
+    filter_band_pass = 1,
+    filter_heigh_pass= 2
+  } eFilterType;
+
 protected:
-  audio_block_t           *inputQueueArray[1];
-  AudioMixer4              mixer;
-  AudioFilterStateVariable filter;
-  AudioEffectEnvelope      filterEnvelope;
-  AudioEffectEnvelope      outEnvelope;
-  VoiceInput               voices[4];
+  VoiceInput                  voices[4];
+
+  AudioMixer4                 mixer;
+  AudioFilterStateVariable    filter;
+  eModulation                 modShape;
+  eModulation                 modFilter;
+  AudioSynthWaveformModulated lfo;
+  AudioSynthWaveformDc        dc;
+  AudioEffectEnvelope         envelope;
+  AudioEffectEnvelope         envelopeOut;
+  AudioAmplifier              amp;
+  
+  AudioConnection             patch_mixer_filter;
+  AudioConnection             patch_dc_envelope;
+  AudioConnection             patch_amp_filter;
+  AudioConnection             *patch_envelope_out;
+  AudioConnection             *patch_filter_modulation;
+
 public:
   SynthVoice();
   virtual ~SynthVoice();
 
+  void setFilterType(eFilterType type);
+
+  void setFilterFrequency(float freq);
+  void setFilterResonance(float Q);
+  
+  void setFilterModulation(eModulation modulation, AudioStream *input= nullptr);
   void setFilterModDepth(float depth);
-  void setFilterEnvDepth(float depth);  
+
+  void setFrequency(float freq);
+  void setShapeModulation(eModulation modulation, AudioStream *input= nullptr); 
+
+  void noteOn();
+  void noteOff();
 };
