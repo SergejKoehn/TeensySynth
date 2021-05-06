@@ -231,6 +231,9 @@ void SynthVoice::setShapeModulation(eModulation modulation, AudioStream *input)
 
 void SynthVoice::noteOn()
 {
+  envelope.noteOn();
+  envelopeOut.noteOn();
+
   for ( int i= 0; i < 4; i++ )
   {
     voices[i].noteOn();
@@ -239,8 +242,11 @@ void SynthVoice::noteOn()
 
 void SynthVoice::noteOff()
 {
+  envelope.noteOff();
+  envelopeOut.noteOff();
+
   for ( int i= 0; i < 4; i++ )
   {
-    voices[i].noteOn();
+    voices[i].noteOff();
   }
 }
